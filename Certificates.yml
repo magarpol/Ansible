@@ -41,7 +41,7 @@
       shell: snap install certbot-dns-PLUGIN #Hetzner DNS Pluginname??
       ignore_errors: yes
       
-    # task 7 - Choos how to run Certbot: https://eff-certbot.readthedocs.io/en/latest/using.html#dns-plugins
+    # task 7 - Choose how to run Certbot: https://eff-certbot.readthedocs.io/en/latest/using.html#dns-plugins
     
     - name: Teset automatic renewal
       become: yes
