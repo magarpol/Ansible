@@ -1,0 +1,49 @@
+---
+- name: Install and Configure Certbot
+  hosts: server1, server2, server3, server4
+  become: yes
+  
+  tasks:
+    - name: Install snapd
+      become: yes
+      apt:
+        name: snapd
+        state: present
+         
+    - name: Remove certbot and any Certbot OS packages
+      become: yes
+      apt:
+        name: certbot
+        state: absent
+      ignore_errors: yes  
+      
+    - name: Install Certbot
+      become: yes
+      shell: snap install --classic certbot
+      args:
+        creates: /snap/bin/certbot
+      register: certbot_install_result
+      
+    - name: Prepare Certbot command symlink
+      become: yes
+      file:
+        src: /snap/bin/certbot
+        dest: /usr/bin/certbot
+        state: link
+      when: certbot_install_result.rc == 0
+      
+    - name: Set plugin contaiment level
+      become: yes
+      shell: snap set certbot trust-plugin-with-root=ok
+      
+    - name: Install Certbot DNS plugin
+      become: yes
+      shell: snap install certbot-dns-PLUGIN #Hetzner DNS Pluginname??
+      ignore_errors: yes
+      
+    # task 7 - Choos how to run Certbot: https://eff-certbot.readthedocs.io/en/latest/using.html#dns-plugins
+    
+    - name: Teset automatic renewal
+      become: yes
+      shell: certbot renew --dry-run
+      ignore_errors: yes 
