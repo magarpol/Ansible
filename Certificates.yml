@@ -53,7 +53,7 @@
       shell: certbot certonly --dns-<PLUGIN> --<PLUGIN>-credentials /path/credentials.ini -d example.com
       ignore_errors: yes
     
-    - name: Teset automatic renewal
+    - name: Test automatic renewal
       become: yes
       shell: certbot renew --dry-run
       ignore_errors: yes 
