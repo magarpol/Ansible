@@ -41,7 +41,17 @@
       shell: snap install certbot-dns-PLUGIN #Hetzner DNS Pluginname??
       ignore_errors: yes
       
-    # task 7 - Choose how to run Certbot: https://eff-certbot.readthedocs.io/en/latest/using.html#dns-plugins
+    # task 7 - Set up credentials: https://eff-certbot.readthedocs.io/en/latest/using.html#dns-plugins
+    - name: Set up credentials
+      become: yes
+      shell: certbot certonly --dns-<PLUGIN> --<PLUGIN>-credentials /path
+      ignore_errors: yes
+      
+    # task 8 - Choose how to run Certbot: https://eff-certbot.readthedocs.io/en/latest/using.html#dns-plugins
+    - name: Run Certbot
+      become: yes
+      shell: certbot certonly --dns-<PLUGIN> --<PLUGIN>-credentials /path/credentials.ini -d example.com
+      ignore_errors: yes
     
     - name: Teset automatic renewal
       become: yes
