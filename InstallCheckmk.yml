@@ -1,0 +1,49 @@
+---
+- name: Install Checkmk agent
+  hosts: server1, server2
+  become: yes
+  
+  tasks:
+    - name: Download Checkmk agent package (Debian)
+      ansible.builtin.get_url:
+        url: "https://example.com/check-mk-agent_2.2.0p24-1_all.deb"
+        dest: "/tmp/check-mk-agent_2.2.0p24-1_all.deb"
+      when: ansible_distribution == 'Debian'
+    
+    - name: Download Checkmk agent package (RedHat)
+      ansible.builtin.get_url:
+        url: "https://example.com/check-mk-agent-2.2.0p24-1.noarch.rpm"
+        dest: "/tmp/check-mk-agent-2.2.0p24-1.noarch.rpm"
+      when: ansible_distribution == 'RedHat'
+    
+    - name: Download Checkmk agent package (SUSE)
+      ansible.builtin.get_url:
+        url: "https://example.com/check-mk-agent-2.2.0p24-1.noarch.rpm"
+        dest: "/tmp/check-mk-agent-2.2.0p24-1.noarch.rpm"
+      when: ansible_distribution == 'SUSE'
+    
+    - name: Install Checkmk agent (Debian)
+      ansible.builtin.command: apt install -y ./check-mk-agent_2.2.0p24-1_all.deb
+      args:
+        chdir: /tmp
+      when: ansible_distribution == 'Debian'
+    
+    - name: Install Checkmk agent (RedHat)
+      ansible.builtin.command: yum install -y ./check-mk-agent-2.2.0p24-1.noarch.rpm
+      args:
+        chdir: /tmp
+      when: ansible_distribution == 'RedHat'
+    
+    - name: Install Checkmk agent (SUSE)
+      ansible.builtin.command: zypper install -y ./check-mk-agent-2.2.0p24-1.noarch.rpm
+      args:
+        chdir: /tmp
+      when: ansible_distribution == 'openSUSE'
+    
+    - name: Enable Checkmk agent socket
+      ansible.builtin.systemd:
+        name: check-mk-agent.socket
+        state: started
+        enabled: yes 
+    
+    
