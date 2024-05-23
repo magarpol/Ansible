@@ -1,0 +1,21 @@
+---
+- name: Create a scripts folder to store scripts and paste UserAndSSH.sh script
+  hosts: server1, server2, server2
+  become: yes
+  
+  tasks:
+    - name: Create scripts directory in /root
+      ansible.builtin.file:
+        path: /root/scripts
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+        
+    - name: Copy the .sh script to the scripts directory
+      ansible.builtin.copy:
+        src: /path/UserAndSSH.sh
+        dest: /root/scripts/
+        mode: '0755'
+        owner: root
+        grou: root 
