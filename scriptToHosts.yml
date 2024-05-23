@@ -1,0 +1,12 @@
+---
+- name: Paste script file into /root/scripts folder on selected hosts
+  hosts: server1, server2, server2
+  become: yes
+        
+    - name: Copy the .sh script to the scripts directory
+      ansible.builtin.copy:
+        src: /path/UserAndSSH.sh
+        dest: /root/scripts/
+        mode: '0755'
+        owner: root
+        grou: root 
