@@ -52,6 +52,28 @@
       become: yes
       shell: certbot certonly --dns-<PLUGIN> --<PLUGIN>-credentials /path/credentials.ini -d example.com
       ignore_errors: yes
+
+    - name: Certificate Failure
+      block:
+        - name: Debug Certbot output
+          debug:
+            var: certbot_result
+
+        - name: Send failure email
+          mail:
+            host: smtp.example.com
+            port: 587
+            username: "user@example.com"
+            password: "password"
+            to: "admin@example.com"
+            subject: "Certbot Certificate Acquisition Failed"
+            body: |
+              Certbot failed to obtain a certificate for example.com.
+              Please check the Certbot output below for details:
+
+              {{ certbot_result.stdout }}
+
+      when: not cert_check.stat.exists
     
     - name: Test automatic renewal
       become: yes
