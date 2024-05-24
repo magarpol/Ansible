@@ -1,0 +1,19 @@
+---
+- name: Install Postfix and start/enable the service
+  hosts: server1, server2, server3
+  become: yes
+  
+  tasks: 
+    - name: Install Postfix 
+      apt:
+        name: postfix 
+        state: present
+        
+    - name: Start and enable Postfix
+      systemd:
+        name: postfix
+        state: started
+        enabled: yes 
+  
+  
+    
