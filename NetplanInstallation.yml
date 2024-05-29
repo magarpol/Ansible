@@ -1,0 +1,23 @@
+---
+- name: Install Netplan
+  hosts: server1, server2
+  become: yes
+  
+  tasks:
+    - name: Install Netplan package (Debian < 12)
+      ansible.builtin.apt:
+        name: netplan.io
+        state: present        
+      when: ansible_distribution == 'Debian' and ansible_distribution_version is version_compare('12', '<')
+      
+    - name: Install Netplan package (Ubuntu < 22)
+      ansible.builtin.apt:
+        name: netplan.io
+        state: present        
+      when: ansible_distribution == 'Ubuntu' and ansible_distribution_version is version_compare('22.04', '<')
+    
+    - name: Install Netplan package (SUSE)
+      ansible.builtin.zypper:
+        name: netplan
+        state: present
+      when: ansible_distribution == 'SUSE'
