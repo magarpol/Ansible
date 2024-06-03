@@ -21,3 +21,16 @@
         name: netplan
         state: present
       when: ansible_distribution == 'SUSE'
+
+    - name: Install EPEL repository (RedHat/CentOS)
+      ansible.builtin.yum:
+        name: epel-release
+        state: present
+      when: ansible_distribution in ['RedHat', 'CentOS']
+      
+    - name: Install Netplan package (RedHat/CentOS)
+      ansible.builtin.yum:
+        name: Netplan
+        state: present
+      when: ansible_distribution in ['RedHat', 'CentOS']
+      
