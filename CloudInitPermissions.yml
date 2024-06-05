@@ -1,0 +1,27 @@
+---
+- name: Change permissions on 50-cloud-init.yaml
+  hosts: all
+  become: yes
+  
+  tasks:
+    - name: Change permissions only on Debian 12/Ubuntu 22.04
+      ansible.builtin.stat: 
+        path: /etc/netplan/50-cloud-init.yaml
+      register: netplan_file
+      when: >
+        (ansible_distribution == 'Debian' and ansible_distribution_version is version_compare ('12', '==')) or
+        (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version_compare ('22.04', '==')) or
+        
+    - name: Change ownership of .yaml file to root
+      ansible.builtin.file:
+        path: /etc/netplan/50-cloud-init.yaml
+        owner: root
+        group: root
+      when: netplan_file.stat.exists
+      
+    - name: Change permissions of .yaml file to 600
+      ansible.builtin.file:
+        path: /etc/netplan/50-cloud-init.yaml
+        mode: '0600'
+      when: netplan_file.stat.exists
+      
