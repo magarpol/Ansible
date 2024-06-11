@@ -1,0 +1,18 @@
+#cloud-config
+write_files:
+  - path: /etc/netplan/50-cloud-init.yaml
+    content: |
+      network:
+       version: 2
+       ethernets:
+         ens6: 
+            addresses:
+              - #IP_ADDRESS#/23
+            gateway4: #GATEWAY#
+            nameservers:
+              addresses:
+                - #DNS1#
+                - #DNS2#
+
+runcmd:
+  - netplan apply
