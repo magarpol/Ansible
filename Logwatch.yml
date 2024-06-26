@@ -1,0 +1,31 @@
+---
+- name: Configure Logwatch on all hosts
+  hosts: all
+  become: yes
+
+  vars:
+    source_dir: /tmp
+    plugin_dir: /usr/lib/check_mk_agent/plugins
+    logwatch_dir: /etc/check_mk/
+
+  tasks:
+    - name: Copy mk_logwatch.py to plugin directory
+      ansible.builtin.copy:
+        src: "{{ source_dir }}/mk_logwatch.py"
+        dest: "{{ plugin_dir }}/mk_logwatch.py"
+        mode: '0755'
+
+    - name: Copy logwatch.cfg to logwatch directory
+      ansible.builtin.copy:
+        src: "{{ source_dir }}/logwatch.cfg"
+        dest: "{{ logwatch_dir }}/logwatch.cfg"
+        mode: '0644'
+      
+    - name: Execute mk_logwatch.py
+      ansible.builtin.command:
+        cmd: "python3 {{ plugin_dir }}/mk_logwatch.py"
+
+    - name: Restart check_mk_agent.socket
+      ansible.builtin.systemd:
+        name: check_mk_agent.socket
+        state: restarted
