@@ -1,0 +1,56 @@
+---
+- name: Create system.log from journalctl on Debian 12 and Ubuntu 22.04
+  hosts: all
+  become: yes
+  vars:
+    journal_script_path: /usr/local/bin/journal-to-log.sh
+    systemd_service_path: /etc/systemd/system/journal-to-log.service
+
+  tasks:
+    - name: Check if the OS is Debian 12 or Ubuntu 22.04
+      ansible.builtin.shell: cat /etc/os-release | grep -E 'Debian GNU/Linux 12|Ubuntu 22.04'
+      register: os_release
+      changed_when: false
+      check_mode: no
+
+    - name: Set OS variables for Debian 12 and Ubuntu 22.04
+      set_fact:
+        is_debian_12: "{{ os_release.stdout.find('Debian GNU/Linux 12') != -1 }}"
+        is_ubuntu_22_04: "{{ os_release.stdout.find('Ubuntu 22.04') != -1 }}"
+
+    - name: Create journal-to-log.sh script
+      ansible.builtin.copy:
+        dest: "{{ journal_script_path }}"
+        content: |
+          #!/bin/bash
+          journalctl -f >> /var/log/system.log
+        mode: '0755'
+      when: is_debian_12 or is_ubuntu_22_04
+
+    - name: Create journal-to-log.service systemd service file
+      ansible.builtin.copy:
+        dest: "{{ systemd_service_path }}"
+        content: |
+          [Unit]
+          Description=Journal to Log File
+
+          [Service]
+          ExecStart={{ journal_script_path }}
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+      when: is_debian_12 or is_ubuntu_22_04
+
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+      when: is_debian_12 or is_ubuntu_22_04
+
+    - name: Start and enable journal-to-log.service
+      ansible.builtin.systemd:
+        name: journal-to-log.service
+        state: started
+        enabled: yes
+      when: is_debian_12 or is_ubuntu_22_04
