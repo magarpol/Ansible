@@ -1,0 +1,33 @@
+---
+- name: Update Checkmk Agent on Linux hosts 
+  hosts: linux_servers
+  become: yes
+  vars:
+      deb_package: /tmp/ 
+      rpm_package: /tmp/
+
+  tasks:
+    - name: Detect OS family
+      ansible.builtin.setup:
+        filter: ansible_distribution
+
+    - name: Install Checkmk on Debian
+      ansible.builtin.apt:
+        deb: "{{ deb_package }}"
+      when: ansible_distribution == "Debian"
+
+    - name: Install Checkmk on RedHat
+      ansible.builtin.yum:
+        name: "{{ rpm_package }}"
+      when: ansible_distribution == "RedHat"
+
+    - name: Install Checkmk on SUSE
+      ansible.builtin.zypper:
+        name: "{{ rpm_package }}"
+      when: ansible_distribution == "SUSE"
+
+    - name: Restart Checkmk Agent
+      ansible.builtin.systemd:
+        name: check-mk-agent.socket
+        state: restarted
+      when: ansible_distribution == "Debian" or ansible_distribution == "RedHat" or ansible_distribution == "SUSE"
