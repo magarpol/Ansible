@@ -1,0 +1,27 @@
+---
+- name: Update CheckMK agent on Windows hosts
+  hosts: windows_servers
+  become: yes
+  vars:
+    msi_package: C:\temp\check_mk_agent.msi
+
+  tasks:
+    - name: Ensure temp directory exists
+      ansible.builtin.win_file:
+        path: C:\temp
+        state: directory
+
+    - name: Copy CheckMK agent to Windows hosts
+      ansible.builtin.win_copy:
+        src: /tmp/check_mk_agent.msi
+        dest: "{{ msi_package }}"
+
+    - name: Install CheckMk agent
+      ansible.builtin.win_package:
+        path: "{{ msi_package }}"
+        state: present
+
+    - name: Restart CheckMk agent 
+      ansible.builtin.win_service:
+        name: CheckmkService 
+        state: restarted
