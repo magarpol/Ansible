@@ -20,6 +20,14 @@
         src: "{{ source_dir }}/logwatch.cfg"
         dest: "{{ logwatch_dir }}/logwatch.cfg"
         mode: '0644'
+        
+    - name: Configure logwatch.cfg
+      ansible.builtin.blockinfile:
+        path: "{{ logwatch_dir }}/logwatch.cfg"
+        block: 
+          /var/log/unattended-upgrades/unattended-upgrades.log
+            C error
+            C fail
       
     - name: Execute mk_logwatch.py
       ansible.builtin.command:
