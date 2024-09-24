@@ -1,33 +1,26 @@
 ---
 - name: Install mailutils and Postfix
-  hosts: server1, server2, server3
+  hosts: [linux_servers]
   become: yes
-
-  pre_tasks:
-    - name: Preconfigure Postfix with "Internet Site"
+  
+  tasks: 
+    - name: Install mailutils and postfix
+      apt:
+        name:
+          - mailutils
+          - postfix
+        state: present
       debconf:
         name: postfix
-        question: "postfix/main_mailer_type"
+        question: postfix/mailname
         value: "Internet Site"
         vtype: string
         
-    - name: Set name dynamically to each server hostname
-      debconf:
-        name: postfix
-        question: "postfix/mailname"
-        value: "{{ inventory_hostname }}"
-        vtype: string
-  
-  tasks: 
-    - name: Install mailutils 
-      apt:
-        name: mailutils 
-        state: present
-        
-    - name: Install Postfix
+    - name: Postfix service is enabled and started
       systemd:
         name: postfix
-        state: present
+        enabled: yes
+        state: started
   
   
     
