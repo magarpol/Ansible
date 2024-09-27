@@ -1,0 +1,29 @@
+---
+- name: Check if exim4 is installed on all Linux hosts
+  hosts: [linux_servers]
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: Check if exim4 is installed
+      ansible.builtin.shell: dpkg -l | grep -w 'exim4'
+      register: exim4_installed
+      ignore_errors: yes
+
+    - name: Is exim4 installed?
+      ansible.builtin.set_fact:
+        exim4_missing: "{{ missing_exim4 | default([]) + [inventory_hostname] }}"
+      when: exim4_installed.rc !=0
+
+    - name: Check if exim4 is running and enabled
+      ansible.builtin.systemd:
+        name: exim4
+        state: started
+        enabled: yes
+      ignore_errors: yes
+      when: exim4_installed.rc == true
+
+    - name: Display servers missing exim4
+      debug:
+        msg: "The following servers are missing exim4: {{ exim4_missing }}"
+      when: missing_exim4 is defined
