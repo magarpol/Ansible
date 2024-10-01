@@ -1,0 +1,46 @@
+---
+- name: Install exim4 on all servers
+  hosts: [linux_servers]
+  become: yes
+
+  tasks:
+    - name: Install exim4
+      apt:
+        name: exim4
+        state: present
+
+    - name: Ensure /etc/exim4/update-exim4.conf.conf has the correct values
+      replace:
+        path: /etc/exim4/update-exim4.conf.conf
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.line }}"
+      loop:
+        - { regexp: "^dc_eximconfig_configtype=.*", line: "dc_eximconfig_configtype='satellite'" }
+        - { regexp: "^dc_other_hostnames=.*", line: "dc_other_hostnames=''" }
+        - { regexp: "^dc_local_interfaces=.*", line: "dc_local_interfaces='127.0.0.1 ; ::1'" }
+        - { regexp: "^dc_readhost=.*", line: "dc_readhost=''" }
+        - { regexp: "^dc_relay_domains=.*", line: "dc_relay_domains=''" }
+        - { regexp: "^dc_minimaldns=.*", line: "dc_minimaldns='false'" }
+        - { regexp: "^dc_relay_nets=.*", line: "dc_relay_nets=''" }
+        - { regexp: "^dc_smarthost=.*", line: "dc_smarthost='your host mail'" }
+        - { regexp: "^CFILEMODE=.*", line: "CFILEMODE='644'" }
+        - { regexp: "^dc_use_split_config=.*", line: "dc_use_split_config='false'" }
+        - { regexp: "^dc_hide_mailname=.*", line: "dc_hide_mailname='true'" }
+        - { regexp: "^dc_mailname_in_oh=.*", line: "dc_mailname_in_oh='true'" }
+        - { regexp: "^dc_localdelivery=.*", line: "dc_localdelivery='mail_spool'" }
+
+    - name: Update /etc/email-addresses with server hostname
+      lineinfile:
+        path: /etc/email-addresses
+        regexp: '^root:.*'
+        line: "root: {{ ansible_hostname }}@bpanda.com"
+        create: yes
+
+    - name: Apply the new Exim4 configuration
+      command: update-exim4.conf
+
+    - name: Exim4 is enabled and started
+      ansible.builtin.systemd:
+        name: exim4
+        enabled: yes
+        state: started
