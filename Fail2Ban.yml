@@ -1,0 +1,59 @@
+---
+- name: Install and configure Fail2ban on all hosts
+  hosts: [linux_servers]
+  become: yes
+
+  tasks:
+    - name: Install Fail2ban
+      apt:
+        name: fail2ban 
+        state: present
+
+    - name: Copy fail2ban config file
+      copy:
+        src: /etc/fail2ban/jail.conf
+        dest: /etc/fail2ban/jail.local
+        owner: root
+        group: root
+        mode: 0644    
+        remote_src: yes
+
+    - name: Configure Fail2ban /etc/fail2ban/jail.local
+      copy:
+        dest: /etc/fail2ban/jail.local
+        content: |
+          [DEFAULT]
+          ignoreip = 127.0.0.1/8 ::1
+          bantime = 600m
+          findtime = 10m
+          maxretry = 6
+
+          [sshd]
+          enabled = true
+          port    = ssh
+          logpath = /var/log/auth.log
+          backend = systemd
+          mayretry = 6
+          bantime = 15m
+          findtime = 15m
+
+    - name: Configure fail2ban for sshd
+      copy:
+        dest: /etc/fail2ban/jail.d/sshd.local
+        content: |
+          [sshd]
+          enabled = true
+          maxretry = 6
+          bantime = 15m
+          findtime = 15m
+
+    - name: Restart Fail2ban
+      systemd:
+        name: fail2ban
+        state: restarted
+        enabled: yes
+
+    - name: Enable Fail2Ban on boot
+      systemd:
+        name: fail2ban
+        enabled: yes
