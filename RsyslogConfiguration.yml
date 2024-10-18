@@ -1,0 +1,71 @@
+---
+- name: Set up rsyslog on client servers and forward logs to central server
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install rsyslog
+      apt:
+        name: rsyslog
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Install rsyslog
+      apt:
+        name: rsyslog
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Remove content of 50-default.conf
+      copy:
+        content: ""
+        dest: /etc/rsyslog.d/50-default.conf
+        backup: yes
+
+    - name: Append rsyslog configuration
+      blockinfile:
+        path: /etc/rsyslog.d/50-default.conf
+        create: yes
+        block: |
+          #  Default rules for rsyslog.
+          #
+          #                       For more information see rsyslog.conf(5) and /etc/rsyslog.conf
+
+          *.* @@x.x.x.x #hostname
+
+          #
+          # First some standard log files.  Log by facility.
+          #
+
+          # System Logs
+          auth,authpriv.*                 /var/log/auth.log
+          *.*;auth,authpriv.none          -/var/log/syslog
+          kern.*                          -/var/log/kern.log
+          *.info;mail.none;authpriv.none;cron.none -/var/log/messages
+          boot.*                          -/var/log/boot.log
+
+          # Application and Service Logs
+          cron.*                          /var/log/cron.log
+          mail.*                          /var/log/mail.log
+          daemon.*                        -/var/log/daemon.log
+
+          # Web Services Logs (NGINX, Apache)
+          nginx.access.*                  /var/log/nginx/access.log
+          nginx.error.*                   /var/log/nginx/error.log
+          apache.*                        /var/log/apache2/access.log
+          apache.*                        /var/log/apache2/error.log
+
+          # Docker Logs
+          docker.*                        /var/log/docker.log
+
+          # Security and Audit Logs
+          audit.*                         /var/log/audit/audit.log
+          iptables.*                      -/var/log/iptables.log
+
+          # Exim Mail Server Logs
+          mail.*                          -/var/log/exim/mainlog
+
+    - name: Restart rsyslog service
+      service:
+        name: rsyslog
+        state: restarted
