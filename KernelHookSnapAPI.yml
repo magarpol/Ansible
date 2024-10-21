@@ -1,0 +1,20 @@
+---
+- name: Configure install-headers script for kernel headers installation
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Create /etc/kernel/postinst.d/install-headers script
+      copy:
+        dest: /etc/kernel/postinst.d/install-headers
+        content: |
+          #!/bin/bash
+          apt-get install -y linux-headers-$(uname -r)
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Is executable
+      file:
+        path: /etc/kernel/postinst.d/install-headers
+        mode: 0755
