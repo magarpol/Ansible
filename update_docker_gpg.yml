@@ -1,0 +1,33 @@
+---
+- name: Update Docker GPG Key to Secure Location
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Create directory
+      file:
+      state: /usr/share/keyrings
+      owner: root
+      group: root
+      mode: 0755
+
+    - name: Move Docker GPG Key to /usr/share/keyrings
+      copy:
+        src: /etc/apt/trusted.gpg 
+        dest: /usr/share/keyrings/docker-archive-keyring.gpg
+        owner: root
+        group: root
+        mode: 0644
+        remote_src: yes
+
+    - name: Update Docker repository to use the new GPG Key
+      lineinfile:
+        path: /etc/apt/sources.list.d/docker.list
+        regexp: 'deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bookworm stable'
+
+    - name: Remove old GPG Key
+      command: rm -f /etc/apt/trusted.gpg
+
+    - name: Update APT
+      apt:
+        update_cache: yes
