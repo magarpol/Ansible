@@ -1,0 +1,64 @@
+---
+- name: Configure unattended-upgrades 
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure unattended-upgrades is installed
+      ansible.builtin.package:
+        name: unattended-upgrades
+        state: present
+
+    - name: Configure unattended-upgrades with dpkg-reconfigure
+      ansible.builtin.command:
+        cmd: dpkg-reconfigure -f noninteractive unattended-upgrades
+      args:
+        creates: /etc/apt/apt.conf.d/50unattended-upgrades
+
+    - name: Enable unattended-upgrades service
+      ansible.builtin.systemd:
+        name: unattended-upgrades.service
+        enabled: yes
+        state: started
+
+    - name: Ensure Allowed-Origins block is present and configured
+      ansible.builtin.blockinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        marker: "# {mark} MANAGED BY ANSIBLE - Allowed Origins"
+        block: |
+          Unattended-Upgrade::Allowed-Origins {
+              "origin=Debian,codename=${distro_codename},label=Debian";
+              "origin=Debian,codename=${distro_codename},label=Debian-Security";
+              "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+              "origin=Docker,codename=${distro_codename},label=Docker CE";
+              "origin=Debian,codename=${distro_codename}-stable-security";
+              "o=Docker,a=bookworm,l=Docker CE,c=stable";
+              "o=Debian,a=stable";
+              "o=Debian,a=stable-updates";
+          };
+
+    - name: Ensure Unattended-Upgrade::Mail is configured
+      ansible.builtin.lineinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        regexp: '^Unattended-Upgrade::Mail'
+        line: 'Unattended-Upgrade::Mail "servicedesk@mid.de";'
+
+    - name: Ensure Unattended-Upgrade::Automatic-Reboot is configured
+      ansible.builtin.lineinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        regexp: '^//\s*Unattended-Upgrade::Automatic-Reboot'
+        line: 'Unattended-Upgrade::Automatic-Reboot "false";'
+        state: present
+
+    - name: Ensure Unattended-Upgrade::Verbose is configured
+      ansible.builtin.lineinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        regexp: '^//\s*Unattended-Upgrade::Verbose'
+        line: 'Unattended-Upgrade::Verbose "true";'
+        state: present
+
+    - name: Restart unattended-upgrades
+      ansible.builtin.systemd:
+        name: unattended-upgrades.service
+        state: restarted
+        
