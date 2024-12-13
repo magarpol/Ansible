@@ -1,0 +1,151 @@
+---
+- name: Gather and compile server information
+  hosts: certain_host
+  become: yes
+
+  tasks:
+    - name: Gather all facts
+      ansible.builtin.setup:
+
+    - name: Create directoy for reports
+      ansible.builtin.file:
+        path: /var/reports
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Generate time and date filename
+      set_fact:
+        report_file: "/var/reports/server_info {{ ansible_hostname }} {{ ansible_date_time.date }}.txt"
+
+    - name:  Collect hard disk information
+      shell: "lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT"
+      register: harddisk_info
+
+    - name: Collect memory information
+      shell: "free -h"
+      register: ram_info
+
+    - name: Collect partition details
+      shell: "df -hT"
+      register: partition_info
+
+    - name: Collect LVM details
+      shell: "lvdisplay"
+      register: lvm_info
+      ignore_errors: true
+
+    - name: Collect LUKS details
+      shell: "cryptsetup status $(lsblk -o NAME,FSTYPE | grep crypto_LUKS | awk '{print $1}')"
+      register: luks_info
+      ignore_errors: true
+
+    - name: Collect Docker details
+      shell: "docker info"
+      register: docker_info
+      ignore_errors: true
+
+    - name: List Docker containers
+      shell: "docker ps -a"
+      register: docker_containers
+      ignore_errors: true
+
+    - name: Collect kernel version 
+      shell: "uname -r"
+      register: kernel_version
+
+    - name: Collect CPU details
+      shell: "lscpu"
+      register: cpu_info
+
+    - name: Collect network interfaces
+      shell: "ip -brief address"
+      register: network_info
+
+    - name: Collect uptime 
+      shell: "uptime -p"
+      register: uptime_info
+
+    - name: Collect active services
+      shell: "systemctl list-units --type=service --state=running"
+      register: services_info
+
+    - name: Collect active users with home directory
+      shell: |
+        awk -F: '$6 ~ "^/home\//" {print $1}' /etc/passwd
+      register: home_users
+
+    - name: Compile report
+      copy:
+        dest: "{{ report_file }}"
+        content: |
+          ##############
+          # Hard Disk #
+          ##############
+          {{ harddisk_info.stdout }}
+
+          ##############
+          # RAM #
+          ##############
+          {{ ram_info.stdout }}
+
+          ##############
+          # Partitions #
+          ##############
+          {{ partition_info.stdout }}
+
+          ##############
+          # LVM #
+          ##############
+          {{ lvm_info.stdout | default('No LVM configured.') }}
+
+          ##############
+          # LUKS #
+          ##############
+          {{ luks_info.stdout | default('No LUKS encrypted volumes detected.') }}
+
+          ##############
+          # Docker #
+          ##############
+          {{ docker_info.stdout | default('Docker is not installed.') }}
+
+          ##############
+          # Docker Containers #
+          ##############
+          {{ docker_containers.stdout | default('No Docker containers found.') }}
+
+          ##############
+          # Kernel Version #
+          ##############
+          {{ kernel_version.stdout }}
+
+          ##############
+          # CPU Details #
+          ##############
+          {{ cpu_info.stdout }}
+
+          ##############
+          # Network Interfaces #
+          ##############
+          {{ network_info.stdout }}
+
+          ##############
+          # Uptime #
+          ##############
+          {{ uptime_info.stdout }}
+
+          ##############
+          # Active Services #
+          ##############
+          {{ services_info.stdout }}
+
+          ###############################
+          # Users with home directories #
+          ###############################
+          {% for user in home_users.stdout_lines%}
+          {{ user }}
+          {% endfor %}
+
+    - name: Print the report
+      shell: "cat {{ report_file }}"
