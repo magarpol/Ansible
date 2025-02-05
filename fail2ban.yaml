@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    fail2ban.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook installs and configures fail2ban on servers
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Install and configure Fail2ban on all hosts
   hosts: [linux_servers]
