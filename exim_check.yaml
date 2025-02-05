@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    exim_check.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook checks if exim4 is installed on servers
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Check if exim4 is installed on all Linux hosts
   hosts: [linux_servers]
