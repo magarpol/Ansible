@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    checkmk_agent_update.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook updates the CheckMK agent on servers
+# Repository:     https://github.com/magarpol/ansible
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Update Checkmk Agent on Linux hosts 
   hosts: linux_servers
