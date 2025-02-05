@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    install_checkmk.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook installs CheckMK agent on servers
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Install Checkmk agent
   hosts: server1, server2
