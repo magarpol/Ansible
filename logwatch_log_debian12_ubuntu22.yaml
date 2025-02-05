@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    logwatch_log_debian12_ubuntu22.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook creates a system.log from journalctl
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Create system.log from journalctl on Debian 12 and Ubuntu 22.04
   hosts: all
