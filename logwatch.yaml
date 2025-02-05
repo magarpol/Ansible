@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    logwatch.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook installs and configures Logwatch on servers
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Configure Logwatch on all hosts
   hosts: all
