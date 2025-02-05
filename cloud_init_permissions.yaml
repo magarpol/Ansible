@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    cloud_init_permissions.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook change the Cloud Init perimissions on servers
+# Repository:     https://github.com/magarpol/ansible
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Change permissions on 50-cloud-init.yaml
   hosts: all
