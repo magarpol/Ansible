@@ -1,3 +1,11 @@
+# ================================================================================
+# Script Name:    user_management.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook configures de Security Baselines for Linux Systems
+# Repository:     https://github.com/magarpol/ansible
+# Last Updated:   2025-01-30
+# ================================================================================
 ---
 - name: User Management (Baseline for Linux Systems)
   hosts: all
