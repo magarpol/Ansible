@@ -2,7 +2,7 @@
 # Script Name:    checkmk_agent_update_windows.yaml
 # Author:         Mauro García
 # Version:        1.o
-# Description:    This Playbook updates the CheckMK agent in Windows servers
+# Description:    This Playbook updates the CheckMK agent on Windows servers
 # Repository:     https://github.com/magarpol/ansible
 # Last Updated:   2025-01-30
 # ============================================================================
