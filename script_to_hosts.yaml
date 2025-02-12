@@ -1,0 +1,20 @@
+# ============================================================================================
+# Script Name:    script_to_hosts.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook copy a script/archive from a shared folder to a server location
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# =============================================================================================
+---
+- name: Paste script file into /root/scripts folder on selected hosts
+  hosts: server1, server2, server2
+  become: yes
+        
+    - name: Copy the .sh script to the scripts directory
+      ansible.builtin.copy:
+        src: /path/UserAndSSH.sh
+        dest: /root/scripts/
+        mode: '0755'
+        owner: root
+        grou: root 
