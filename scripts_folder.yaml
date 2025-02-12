@@ -1,3 +1,11 @@
+# ============================================================================
+# Script Name:    scripts_folder.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook creates a /scripts directory to store scripts
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# ============================================================================
 ---
 - name: Create a scripts folder to store scripts and paste UserAndSSH.sh script
   hosts: server1, server2, server2
