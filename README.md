@@ -50,6 +50,9 @@ This playbook copy a script/archive from a shared location to a server´s folder
 ### Scripts folder
 This playbook creates a /scripts directory to store scripts.
 
+### Standard packages
+This playbooks reviews and install standard packages that are not installed.
+
 ### Unattended upgrades installation and configuration
 This playbook installs and configures unattended-upgrades.
 
