@@ -1,4 +1,12 @@
 ---
+# ============================================================================
+# Script Name:    reports.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook creates a .txt file with all the server info
+# Repository:     https://github.com/magarpol/scripts
+# Last Updated:   2025-01-30
+# ============================================================================
 - name: Gather and compile server information
   hosts: certain_host
   become: yes
