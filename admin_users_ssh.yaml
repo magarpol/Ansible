@@ -1,0 +1,90 @@
+# ==================================================================================
+# Script Name:    admins_users_ssh.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook creates users with Public Keys and SSH configuration
+# Repository:     https://github.com/magarpol/ansible
+# Last Updated:   2025-02-12
+# ==================================================================================
+
+--- 
+- name: Create admin user with Public Keys and configure sshd service
+  hosts: srv-jama-test-01.innovator.mid
+  become: yes
+  vars:
+    admin_users:
+      - name: 
+        public_key: 
+        public_key: 
+      - name:  
+        public_key: 
+  tasks:
+    - name: Create admins users and add to sudo group
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        groups: sudo
+        append: yes
+        shell: /bin/bash
+        password: ""
+      with_items: "{{ admin_users }}"
+    
+    - name: Ensure home directories have corrected permissions
+      ansible.builtin.file:
+        path: "/home/{{ item.name }}"
+        state: directory
+        owner: "{{ item.name }}"
+        group: sudo
+        mode: '0700'
+      with_items: "{{ admin_users }}"
+
+    - name: Create .ssh directory and authorized_keys file
+      ansible.builtin.file:
+        path: "/home/{{ item.name }}/.ssh"
+        state: directory
+        owner: "{{ item.name }}"
+        group: sudo
+        mode: '0700'
+      with_items: "{{ admin_users }}"
+
+    - name: Add public key to authorized_keys file
+      ansible.builtin.copy:
+        content: "{{ item.public_key }}"
+        dest: "/home/{{ item.name }}/.ssh/authorized_keys"
+        owner: "{{ item.name }}"
+        group: sudo
+        mode: '0600'
+      with_items: "{{ admin_users }}"
+
+    - name: Force password change on first login
+      ansible.builtin.command:
+        cmd: chage -d 0 "{{ item.name }}"
+      with_items: "{{ admin_users }}"
+
+    - name: Add Match User configuration to sshd config
+      ansible.builtin.blockinfile:
+        path: /etc/ssh/sshd_config
+        block: |
+          Match User t1-mogarcia
+            PasswordAuthentication no
+            AuthenticationMethods publickey
+          Match User t1-tsschmid
+            PasswordAuthentication no
+            AuthenticationMethods publickey
+          Match User t1-snbrunne
+            PasswordAuthentication no
+            AuthenticationMethods publickey
+        state: present
+        insertafter: EOF
+        marker: "# BEGIN Admin Users | END Admin Users"
+
+    - name: Comment 'PermitRootLogin yes' in sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin yes'
+        line: '#PermitRootLogin yes'
+        state: present
+
+    - name: Restart sshd service
+      ansible.builtin.systemd:
+        name: sshd.service
+        state: restarted
