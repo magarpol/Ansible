@@ -4,51 +4,97 @@
 # Version:        1.0
 # Description:    This Playbook installs and configures exim4 on servers
 # Repository:     https://github.com/magarpol/scripts
-# Last Updated:   2025-01-30
+# Last Updated:   2025-02-12
 # ============================================================================
 ---
-- name: Install exim4 on all servers
-  hosts: [linux_servers]
+- name: Install and configure exim4
+  hosts: srv-playbooks-01.innovator.mid
   become: yes
+  vars:
+    exim_internal_ip: "^172\\.16\\."   # Internal IP range
+
+    exim_internal_config: # Configuration blocks for internal and external IP ranges
+      - "dc_eximconfig_configtype='satellite'"
+      - "dc_other_hostnames=''"
+      - "dc_local_interfaces='127.0.0.1 ; ::1'"
+      - "dc_readhost=''"
+      - "dc_relay_domains=''"
+      - "dc_minimaldns='false'"
+      - "dc_relay_nets=''"
+      - "dc_smarthost='smtp.mid.de'"
+      - "CFILEMODE='644'"
+      - "dc_use_split_config='false'"
+      - "dc_hide_mailname='true'"
+      - "dc_mailname_in_oh='true'"
+      - "dc_localdelivery='mail_spool'"
+
+    exim_external_config:
+      - "dc_eximconfig_configtype='satellite'"
+      - "dc_other_hostnames=''"
+      - "dc_local_interfaces='127.0.0.1 ; ::1'"
+      - "dc_readhost=''"
+      - "dc_relay_domains=''"
+      - "dc_minimaldns='false'"
+      - "dc_relay_nets=''"
+      - "dc_smarthost='mid-de.mail.protection.outlook.com'"
+      - "CFILEMODE='644'"
+      - "dc_use_split_config='false'"
+      - "dc_hide_mailname='true'"
+      - "dc_mailname_in_oh='true'"
+      - "dc_localdelivery='mail_spool'"
 
   tasks:
-    - name: Install exim4
-      apt:
-        name: exim4
+    - name: Install required packages
+      ansible.builtin.package:
+        name:
+          - exim4
+          - mailutils
         state: present
 
-    - name: Ensure /etc/exim4/update-exim4.conf.conf has the correct values
-      replace:
+    - name: Get the Server IP address
+      ansible.builtin.command: hostname -I 
+      register: server_ips
+
+    - name: Determine if the server has an internal server_ips
+      set_fact:
+        is_internal_ip: "{{ server_ips.stdout.split() | select('match', exim_internal_ip) | list | length > 0 }}"
+
+    - name: Apply configuration for internal IP 
+      ansible.builtin.blockinfile:
         path: /etc/exim4/update-exim4.conf.conf
-        regexp: "{{ item.regexp }}"
-        replace: "{{ item.line }}"
-      loop:
-        - { regexp: "^dc_eximconfig_configtype=.*", line: "dc_eximconfig_configtype='satellite'" }
-        - { regexp: "^dc_other_hostnames=.*", line: "dc_other_hostnames=''" }
-        - { regexp: "^dc_local_interfaces=.*", line: "dc_local_interfaces='127.0.0.1 ; ::1'" }
-        - { regexp: "^dc_readhost=.*", line: "dc_readhost=''" }
-        - { regexp: "^dc_relay_domains=.*", line: "dc_relay_domains=''" }
-        - { regexp: "^dc_minimaldns=.*", line: "dc_minimaldns='false'" }
-        - { regexp: "^dc_relay_nets=.*", line: "dc_relay_nets=''" }
-        - { regexp: "^dc_smarthost=.*", line: "dc_smarthost='your host mail'" }
-        - { regexp: "^CFILEMODE=.*", line: "CFILEMODE='644'" }
-        - { regexp: "^dc_use_split_config=.*", line: "dc_use_split_config='false'" }
-        - { regexp: "^dc_hide_mailname=.*", line: "dc_hide_mailname='true'" }
-        - { regexp: "^dc_mailname_in_oh=.*", line: "dc_mailname_in_oh='true'" }
-        - { regexp: "^dc_localdelivery=.*", line: "dc_localdelivery='mail_spool'" }
+        block: |
+          {% for line in exim_internal_config %}
+          {{ line }}
+          {% endfor %}
+        state: present
+        marker: "# Begin Internal Configuration | End Internal Configuration"
+      when: is_internal_ip
 
-    - name: Update /etc/email-addresses with server hostname
-      lineinfile:
+    - name: Apply configuration for external IP
+      ansible.builtin.blockinfile:
+        path: /etc/exim4/update-exim4.conf.conf
+        block: |
+          {% for line in exim_external_config %}
+          {{ line }}
+          {% endfor %}
+        state: present
+        marker: "# Begin External Configuration | End External Configuration"
+      when: not is_internal_ip
+
+    - name: Configure /etc/email-addresses for internal IP 
+      ansible.builtin.lineinfile:
         path: /etc/email-addresses
-        regexp: '^root:.*'
+        line: "root: admins@mid.de"
+        state: present
+
+    - name: Configure /etc/email-addresses for external IP
+      ansible.builtin.lineinfile:
+        path: /etc/email-addresses
         line: "root: {{ ansible_hostname }}@bpanda.com"
-        create: yes
+        state: present
+      when: not is_internal_ip
 
-    - name: Apply the new Exim4 configuration
-      command: update-exim4.conf
-
-    - name: Exim4 is enabled and started
+    - name: Restart exim4
       ansible.builtin.systemd:
-        name: exim4
-        enabled: yes
-        state: started
+        name: exim4.service
+        state: restarted
