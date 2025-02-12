@@ -1,0 +1,52 @@
+# ====================================================================================
+# Script Name:    standardpackages.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook reviews and install standard packages if not installed
+# Repository:     https://github.com/magarpol/ansible
+# Last Updated:   2025-01-30
+# ====================================================================================
+---
+- name: Review and install standard packages if not installed
+  hosts: srv-jama-test-01.innovator.mid 
+  become: yes
+
+  tasks: 
+    - name: Detect the OS 
+      ansible.builtin.set_fact:
+        is_debian: "{{ ansible_os_family == 'Debian' }}"
+        is_redhat: "{{ ansible_os_family == 'RedHat' }}"
+
+    - name: Install standard packages on Debian Systems 
+      ansible.builtin.package:
+        name:
+          - vim
+          - screen 
+          - curl
+          - ncdu
+          - parted
+          - rsync 
+          - sudo 
+          - certbot
+          - cryptsetup
+          - bsd-mailx
+          - netcat-traditional
+        state: present
+      when: is_debian
+
+    - name: Install standard packages on RedHat Systems
+      ansible.builtin.package:
+        name: 
+          - vim
+          - screen
+          - curl
+          - ncdu
+          - parted
+          - rsync
+          - sudo
+          - certbot
+          - cryptsetup
+          - mailx 
+          - nmap-ncat # Equivalent to netcat-traditional on RHEL
+        state: present
+      when: is_redhat
