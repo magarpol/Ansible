@@ -1,0 +1,47 @@
+# ==================================================================================
+# Script Name:    user_info.yaml
+# Author:         Mauro García
+# Version:        1.0
+# Description:    This Playbook collects users, groups, and sudo permissions
+# Repository:     https://github.com/magarpol/ansible
+# Last Updated:   2025-02-12
+# ==================================================================================
+---
+- name: Collect users, groups, and sudo permissions
+  hosts: all
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Get all users on the system
+      command: awk -F':' '{if ($3 >= 1000) print $1}' /etc/passwd
+      register: users
+      changed_when: false
+
+    - name: Print all users
+      debug:
+        msg: "{{ users.stdout_lines }}"
+
+    - name: Get groups for all users
+      command: groups {{ item }}
+      with_items: "{{ users.stdout_lines }}"
+      register: groups
+      changed_when: false
+
+    - name: Print each user's groups
+      debug:
+        var: item.stdout
+      with_items: "{{ groups.results }}"
+
+    - name: Check for sudo permissions
+      command: grep '{{ item }}' /etc/sudoers
+      ignore_errors: yes
+      with_items: "{{ users.stdout_lines }}"
+      register: sudo_perms
+      changed_when: false
+
+    - name: Print sudo permissions
+      debug:
+        var: item.stdout
+      with_items: "{{ sudo_perms.results }}"
+      when: item.rc == 0
