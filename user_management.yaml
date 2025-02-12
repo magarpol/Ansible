@@ -8,66 +8,67 @@
 # ================================================================================
 ---
 - name: User Management (Baseline for Linux Systems)
-  hosts: all
+  hosts: srv-playbooks-dev-01.innovator.mid
   become: yes
   vars:
     min_password_length: 12
     password_max_age: 90
     password_min_age: 5
     password_warn_age: 7
-    secure_hash_procedure: yesscript
+    secure_hash_procedure: yescript
     secure_hash_procedure_debian11: sha512
 
   tasks:
-    - name: Dedicated users logins
-      user:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - user1
-        - user2
+    - name: Get list of existing system users
+      ansible.builtin.shell: "getent passwd | awk -F':' '$3 >= 1000 {print $1}'"
+      register: system_users
 
-    - name: SSH is intalled and configured
+    - name: SSH is installed
       apt:
         name: openssh-server
         state: present
-
+    
     - name: SSH to disallow root login and ensure SSHD key login
       lineinfile:
         path: /etc/ssh/sshd_config
-        regexp: '^PermitRootLogin'
+        regexp: '^#?PermitRootLogin'
         line: 'PermitRootLogin no'
         state: present
-      notify: restart SSHD
 
     - name: SSH to allow password authentication
       lineinfile:
         path: /etc/ssh/sshd_config
-        regexp: '^PasswordAuthentication'
-        line: 'PasswordAuthentication yes' 
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no' 
         state: present
       notify: restart SSHD
 
+    #libpam-pwquality package is installed
+    - name: Ensure libpam-pwquality is installed
+      apt:
+        name: libpam-pwquality
+        state: present
+      
     - name: Password policies
       pamd:
         name: common-password
-        section: password
+        type: password
         control: requisite
-        module_path: pam_pwquality.so
-        options: "retry=3 minlen={{ min_password_length }} dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1 difok=4"
+        module_path: pam_pwquality.so #/etc/pam.d/common-password
+        module_arguments: "retry=3 minlen={{ min_password_length }} dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1 difok=4"
 
     - name: Password hashing algorithm is secure
       lineinfile:
         path: /etc/pam.d/common-password
-        regexp: 'password.*[default=die]'
-        line: 'password [success=1 default=ignore] pam_unix.so obscure use_authtok try_first_pass yesscypt'
+        regexp: '^password[ \t]+\[success=1 default=ignore\][ \t]+pam_unix.so[ \t]+obscure[ \t]+.*$'
+        line: 'password [success=1 default=ignore] pam_unix.so obscure use_authtok try_first_pass yescrypt'
       when: ansible_distribution_version is version ('11', '>=') and ansible_distribution == "Debian"
 
     - name: Password expiration policy
       lineinfile:
         path: /etc/login.defs
-        regexp: '^PASS_MIN_DAYS'
-        line: 'PASS_MIN_DAYS {{ password_min_age }}'
+        regexp: '^PASS_MAX_DAYS'
+        line: 'PASS_MAX_DAYS {{ password_max_age }}'
         state: present
 
     - name: Password minimum age
@@ -84,16 +85,6 @@
         line: 'PASS_WARN_AGE {{ password_warn_age }}'
         state: present
 
-    - name: RSA-4096 SSH keys are used
-      user:
-        name: "{{ item }}"
-        generate_ssh_key: yes
-        ssh_key_bits: 4096
-        state: present
-      with_items:
-        - user1
-        - user2
-
     - name: Packages for 2FA
       apt:
         name: libpam-u2f
@@ -105,27 +96,11 @@
         line: 'auth required pam_u2f.so'
         state: present
 
-    - name: Users have decidated access
-      user:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - user1
-        - user2
-
-    - name: Users have no shell access
-      user:
-        name: "{{ item }}"
-        shell: /usr/sbin/nologin
-      with_items:
-        - service_user1
-        - service_user2
-
-      handlers:
-        - name: restart SSHD
-          service:
-            name: sshd
-            state: restarted
+  handlers:
+    - name: restart SSHD
+      service:
+        name: sshd
+        state: restarted
 
 
   
