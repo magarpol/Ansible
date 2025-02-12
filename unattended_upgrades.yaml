@@ -8,7 +8,7 @@
 # ============================================================================
 ---
 - name: Configure unattended-upgrades 
-  hosts: all
+  hosts: srv-playbooks-01.innovator.mid
   become: yes
 
   tasks:
@@ -17,51 +17,61 @@
         name: unattended-upgrades
         state: present
 
-    - name: Configure unattended-upgrades with dpkg-reconfigure
-      ansible.builtin.command:
-        cmd: dpkg-reconfigure -f noninteractive unattended-upgrades
-      args:
-        creates: /etc/apt/apt.conf.d/50unattended-upgrades
-
     - name: Enable unattended-upgrades service
       ansible.builtin.systemd:
         name: unattended-upgrades.service
         enabled: yes
         state: started
 
-    - name: Ensure Allowed-Origins block is present and configured
+    - name: Ensure Debian stable Allowed-Origin is configured
+      ansible.builtin.lineinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        regexp: '//      "o=Debian,a=stable";'
+        line: '      "o=Debian,a=stable";'
+        state: present
+
+    - name: Ensure Debian stable-updates Allowed-Origin is configured
+      ansible.builtin.lineinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        regexp: '//      "o=Debian,a=stable-updates";'
+        line: '      "o=Debian,a=stable-updates";'
+        state: present
+              
+    - name: Add more allowed origins block 
       ansible.builtin.blockinfile:
         path: /etc/apt/apt.conf.d/50unattended-upgrades
-        marker: "# {mark} MANAGED BY ANSIBLE - Allowed Origins"
+        marker: "# {mark} MORE ALLOWED ORIGINS"
+        insertafter: '^      "o=Debian,a=stable-updates";$'
         block: |
-          Unattended-Upgrade::Allowed-Origins {
-              "origin=Debian,codename=${distro_codename},label=Debian";
-              "origin=Debian,codename=${distro_codename},label=Debian-Security";
-              "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
-              "origin=Docker,codename=${distro_codename},label=Docker CE";
-              "origin=Debian,codename=${distro_codename}-stable-security";
-              "o=Docker,a=bookworm,l=Docker CE,c=stable";
-              "o=Debian,a=stable";
-              "o=Debian,a=stable-updates";
-          };
+                  "origin=Debian,codename=${distro_codename}-stable-security,label=Debian-Security";
+                  "origin=Docker,codename=${distro_codename},label=Docker CE";
+                  "o=Docker,a=bookworm,l=Docker CE,c=stable";
 
     - name: Ensure Unattended-Upgrade::Mail is configured
       ansible.builtin.lineinfile:
         path: /etc/apt/apt.conf.d/50unattended-upgrades
-        regexp: '^Unattended-Upgrade::Mail'
-        line: 'Unattended-Upgrade::Mail "mail";'
+        regexp: '^//?\s*Unattended-Upgrade::Mail'
+        line: 'Unattended-Upgrade::Mail "servicedesk@mid.de";' 
+        state: present
+
+    - name: Ensure Unattended-Upgrade::Mail is configured
+      ansible.builtin.lineinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        regexp: '^//?\s*Unattended-Upgrade::Mail'
+        line: 'Unattended-Upgrade::Mail "servicedesk@mid.de";' 
+        state: present     
 
     - name: Ensure Unattended-Upgrade::Automatic-Reboot is configured
       ansible.builtin.lineinfile:
         path: /etc/apt/apt.conf.d/50unattended-upgrades
-        regexp: '^//\s*Unattended-Upgrade::Automatic-Reboot'
+        regexp: '^//?\s*Unattended-Upgrade::Automatic-Reboot'
         line: 'Unattended-Upgrade::Automatic-Reboot "false";'
         state: present
 
     - name: Ensure Unattended-Upgrade::Verbose is configured
       ansible.builtin.lineinfile:
         path: /etc/apt/apt.conf.d/50unattended-upgrades
-        regexp: '^//\s*Unattended-Upgrade::Verbose'
+        regexp: '^//?\s*Unattended-Upgrade::Verbose'
         line: 'Unattended-Upgrade::Verbose "true";'
         state: present
 
@@ -69,4 +79,3 @@
       ansible.builtin.systemd:
         name: unattended-upgrades.service
         state: restarted
-        
